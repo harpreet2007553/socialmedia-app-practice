@@ -10,8 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+var Collection_users *mongo.Collection
 
-func ConnectDB() {
+func ConnectDB(){
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -26,10 +27,10 @@ func ConnectDB() {
 	}
 
 	err = client.Ping(context.Background(), nil)
-
 	if err != nil {
 		log.Fatal("Error connecting to MongoDB:", err)
 	}
 
+	Collection_users = client.Database("SocialAppDB").Collection("users")
 	fmt.Println("Successfully Connected To MONGODB!!")
 }
