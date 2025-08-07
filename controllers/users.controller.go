@@ -94,7 +94,9 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message":    "User registered successfully!",
 		"insertedId": result.InsertedID,
-		"tokens":     tokens.RefreshToken,
+		"RefreshToken":     tokens.RefreshToken,
+		"AccessToken":     tokens.AccessToken,
 	})
 
 }
+
