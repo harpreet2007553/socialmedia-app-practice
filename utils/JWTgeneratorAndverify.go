@@ -1,15 +1,15 @@
 package utils
 
 import (
-	"backend-in-go/db"
-	"backend-in-go/models"
-	"context"
+	// "backend-in-go/db"
+	// "backend-in-go/models"
+	// "context"
 	"log"
-	"net/http"
 	"os"
-    "github.com/golang-jwt/jwt/v5"
+
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/bson"
+	// "go.mongodb.org/mongo-driver/bson"
 )
 
 type JWTUser struct {
@@ -17,21 +17,24 @@ type JWTUser struct {
 	UserName string
 	Email string
 }
-var founded_user models.User
+// var founded_user models.User
 
 type GenerateJWTResponse struct {
 	AccessToken string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
 }
+
 func GenerateJWT(user JWTUser) (GenerateJWTResponse, error) {
 	// Placeholder for JWT generation logic
 	// This function should create a JWT token for the user
-	err := db.Collection_users.FindOne(context.TODO() , bson.M{"id": user.Id}).Decode(&founded_user)
-	if err!=nil {
-		http.Error(nil, "user not found while verifying jwt token", http.StatusBadRequest)
-		panic(err)
-	}
-	err = godotenv.Load()
+	
+	
+	// err := db.Collection_users.FindOne(context.TODO() , bson.M{"id": user.Id}).Decode(&founded_user)
+	// if err!=nil {
+	// 	// http.Error(nil, "user not found while verifying jwt token", http.StatusBadRequest)
+	// 	log.Fatal("user not found while verifying jwt token", err)
+	// 	}
+	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("error loading env variables",err)
 	}
@@ -39,7 +42,7 @@ func GenerateJWT(user JWTUser) (GenerateJWTResponse, error) {
 	ACCESS_TOKEN_EXPIRY := os.Getenv("ACCESS_TOKEN_EXPIRY")
     AccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256,jwt.MapClaims{"_id": user.Id,"email":user.Email ,"username": user.UserName, "exp": ACCESS_TOKEN_EXPIRY})
 
-	AccessTokenString, err := AccessToken.SignedString(ACCESS_TOKEN_SECRET)
+	AccessTokenString, err := AccessToken.SignedString([]byte(ACCESS_TOKEN_SECRET))
     
 	if err != nil {
 		log.Fatal("error while generating access token", err)
@@ -49,18 +52,18 @@ func GenerateJWT(user JWTUser) (GenerateJWTResponse, error) {
   
 	RefreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256,jwt.MapClaims{"_id": user.Id, "exp": REFRESH_TOKEN_EXPIRY})
 
-	RefreshTokenString, err := RefreshToken.SignedString(REFRESH_TOKEN_SECRET)
+	RefreshTokenString, err := RefreshToken.SignedString([]byte(REFRESH_TOKEN_SECRET))
 
 	if err != nil {
 		log.Fatal("error while generating refresh token", err)
 	}
-    response := GenerateJWTResponse{
-		AccessToken:  AccessTokenString,
-		RefreshToken: RefreshTokenString,
-	}
-	return response, nil
+
+	
+	return GenerateJWTResponse{ AccessToken: AccessTokenString,RefreshToken: RefreshTokenString,} , nil
 
 }
+
+	
 
 func VerifyJWT(AccesstokenString string) (string, error) {
 	 err := godotenv.Load()

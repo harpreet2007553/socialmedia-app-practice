@@ -6,16 +6,17 @@ import (
 	"backend-in-go/utils"
 	"context"
 	"encoding/json"
-	"io"
+	"fmt"
 	"net/http"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Requested_User struct {
 	FullName     string    `json:"fullName" bson:"fullName,omitempty"`
-	UserName     string    `json:"UserName" bson:"UserName,omitempty"`
+	UserName     string    `json:"userName" bson:"userName,omitempty"`
 	Email        string    `json:"email" bson:"email,omitempty"`
 	Avatar       string    `json:"avatar" bson:"avatar,omitempty"`
 	Password     string    `json:"password" bson:"password,omitempty"`
@@ -24,22 +25,22 @@ type Requested_User struct {
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var user Requested_User
 	
-	body, _ := io.ReadAll(r.Body)
-    err := json.Unmarshal(body, &user)
-    if err != nil {
-        http.Error(w, "Invalid request payload!!", http.StatusBadRequest)
-        return
-    }
+	// body, _ := io.ReadAll(r.Body)
+    // err := json.Unmarshal(body, &user)
+    // if err != nil {
+    //     http.Error(w, "Invalid request payload!!", http.StatusBadRequest)
+    //     return
+    // }
 
 	
-	// decoder := json.NewDecoder(r.Body)
-    // decoder.DisallowUnknownFields()
-    // err = decoder.Decode(&user)
+	decoder := json.NewDecoder(r.Body)
+    decoder.DisallowUnknownFields()
+    err := decoder.Decode(&user)
 
-	// if err != nil {
-	// 	http.Error(w, "Invalid request payload", http.StatusBadRequest)
-	// 	return
-	// }
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
 	defer r.Body.Close()
 	checkUser := db.Collection_users.FindOne(context.TODO() , bson.M{
 		"$or": []bson.M{
@@ -59,7 +60,6 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		Password:     user.Password,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
-		RefreshToken: "<token>",
 	}
 
 	result, err := db.Collection_users.InsertOne(context.Background(), full_User)
@@ -67,8 +67,15 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to register user", http.StatusInternalServerError)
 		return
 	}
+	InsertedId, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		http.Error(w, "Failed to register user", http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("User registered successfully with ID:", InsertedId.Hex())
+	idStr := InsertedId.Hex()
 	token_user := utils.JWTUser{
-		Id: result.InsertedID.(string),
+		Id: idStr,
 		UserName: user.UserName,
 		Email: full_User.Email,
 	}
@@ -77,16 +84,17 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to generate tokens", http.StatusInternalServerError)
 		return
 	}
-	_ , err = db.Collection_users.UpdateOne(context.TODO(),bson.M{"_id": result.InsertedID}, bson.M{ "$set": bson.M{"RefreshToken": tokens.RefreshToken}} )
+	_ , err = db.Collection_users.UpdateOne(context.TODO(),bson.M{"_id": InsertedId}, bson.M{ "$set": bson.M{"RefreshToken": tokens.RefreshToken}} )
 
 	if err != nil {
 		http.Error(w, "failed to load Refresh Token", 500)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message":    "User registered successfully!",
 		"insertedId": result.InsertedID,
 		"tokens":     tokens.RefreshToken,
 	})
+
 }
