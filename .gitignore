@@ -1,5 +1,6 @@
 .env
 .air.toml
+.gitignore
 backend-in-go.exe~
 backend-in-go.exe
 _debug_bin.exe
