@@ -79,6 +79,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		UserName: user.UserName,
 		Email: full_User.Email,
 	}
+	
 	tokens,err := utils.GenerateJWT(token_user)
 	if err != nil{
 		http.Error(w, "Failed to generate tokens", http.StatusInternalServerError)

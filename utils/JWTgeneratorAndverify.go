@@ -69,7 +69,6 @@ func GenerateJWT(user JWTUser) (GenerateJWTResponse, error) {
 
 }
 
-	
 
 func VerifyJWT(AccesstokenString string, RefreshTokenString string) (string, GenerateJWTResponse, error) {
 	err := godotenv.Load()
