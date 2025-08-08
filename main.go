@@ -3,6 +3,8 @@ package main
 import (
 	"backend-in-go/controllers"
 	"backend-in-go/db"
+	"backend-in-go/middlewares"
+	"encoding/gob"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,6 +13,8 @@ import (
 )
 
 func main() {
+
+  gob.Register(&controllers.Register_User_Cookie{})
   db.ConnectDB();
   err := godotenv.Load();
   if err != nil {
@@ -28,7 +32,10 @@ func main() {
   // routes.InitUserRoutes();
 
   http.HandleFunc("/register", controllers.RegisterUser)
+  http.HandleFunc("/login", controllers.LoginUser)
 
+  logoutHandler := http.HandlerFunc(controllers.Logout)
+  http.Handle("/logout", middlewares.VerifyJWT(logoutHandler))
   fmt.Println("Server starting on port", port)
   http.ListenAndServe(port, nil)
 

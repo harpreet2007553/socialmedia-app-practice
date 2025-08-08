@@ -12,7 +12,7 @@ type User struct {
 	FullName     string    `json:"fullName" bson:"fullName,omitempty"`
 	UserName     string    `json:"userName" bson:"userName,omitempty"`
 	Email        string    `json:"email" bson:"email,omitempty"`
-	Avatar       string    `json:"avatar" bson:"avatar,omitempty"`
+	// Avatar       string    `json:"avatar" bson:"avatar,omitempty"`
 	Password     string    `json:"password" bson:"password,omitempty"`
 	RefreshToken string    `json:"refreshToken" bson:"refreshToken,omitempty"`
 	CreatedAt    time.Time `json:"createdAt" bson:"createdAt,omitempty"`
