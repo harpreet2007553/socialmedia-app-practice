@@ -7,6 +7,8 @@ import (
 
 	"log"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
@@ -41,7 +43,12 @@ func GenerateJWT(user JWTUser) (GenerateJWTResponse, error) {
 	}
 	ACCESS_TOKEN_SECRET := os.Getenv("ACCESS_TOKEN_SECRET")
 	ACCESS_TOKEN_EXPIRY := os.Getenv("ACCESS_TOKEN_EXPIRY")
-    AccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256,jwt.MapClaims{"_id": user.Id,"email":user.Email ,"username": user.UserName, "exp": ACCESS_TOKEN_EXPIRY})
+
+	num, err := strconv.Atoi(ACCESS_TOKEN_EXPIRY)
+	if err != nil {
+		log.Fatal("error converting access token expiry to int", err)
+	}
+    AccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256,jwt.MapClaims{"_id": user.Id,"email":user.Email ,"username": user.UserName, "exp": time.Now().Add(time.Second * time.Duration(num)).Unix()})
 
 	AccessTokenString, err := AccessToken.SignedString([]byte(ACCESS_TOKEN_SECRET))
     
@@ -50,8 +57,13 @@ func GenerateJWT(user JWTUser) (GenerateJWTResponse, error) {
 	}
 	REFRESH_TOKEN_SECRET := os.Getenv("REFRESH_TOKEN_SECRET")
 	REFRESH_TOKEN_EXPIRY := os.Getenv("REFRESH_TOKEN_EXPIRY")
-  
-	RefreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256,jwt.MapClaims{"_id": user.Id, "exp": REFRESH_TOKEN_EXPIRY})
+
+	ref_num, err := strconv.Atoi(REFRESH_TOKEN_EXPIRY)
+	if err != nil {
+		log.Fatal("error converting access token expiry to int", err)
+	}
+
+	RefreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256,jwt.MapClaims{"_id": user.Id, "exp": time.Now().Add(time.Second * time.Duration(ref_num)).Unix()})
 
 	RefreshTokenString, err := RefreshToken.SignedString([]byte(REFRESH_TOKEN_SECRET))
 

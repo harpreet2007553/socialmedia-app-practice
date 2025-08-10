@@ -1,7 +1,11 @@
 package controllers
 
 import (
+	// "backend-in-go/CyclicPackagesImport"
 	"backend-in-go/db"
+	"backend-in-go/middlewares"
+
+	// "backend-in-go/middlewares"
 	"backend-in-go/models"
 	"backend-in-go/utils"
 	"bytes"
@@ -9,7 +13,6 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -19,7 +22,7 @@ import (
 	"time"
 
 	// "backend-in-go/controllers/cookies"
-	"github.com/golang-jwt/jwt/v5"
+	// "github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -36,6 +39,9 @@ type Register_User_Cookie struct {
 		RefreshToken string
 		AccessToken string
 }
+
+// type contextKey struct{}
+
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var user Requested_User
@@ -175,11 +181,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 			log.Fatal("User not found:", err)
 			return
 		}
-		if err := LoginPasswordCheck(login_user, user, w); err != nil {
-			http.Error(w, "Invalid password", http.StatusUnauthorized)
-			log.Fatal("Invalid password:", err)
-			return
-		}
+		 LoginPasswordCheck(login_user, user, w);
 	} else if strings.TrimSpace(login_user.Username) == ""{
         err := db.Collection_users.FindOne(context.TODO(), bson.M{
 				"email": login_user.Email,
@@ -190,9 +192,10 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 			log.Fatal("User not found:", err)
 			return
 		}
+		 LoginPasswordCheck(login_user, user, w);
 	}
 }
-func LoginPasswordCheck(login_user User_Login, user models.User, w http.ResponseWriter) error{
+func LoginPasswordCheck(login_user User_Login, user models.User, w http.ResponseWriter) {
 	if login_user.Password == user.Password {
                 
         fmt.Println("Login Successful")
@@ -206,13 +209,13 @@ func LoginPasswordCheck(login_user User_Login, user models.User, w http.Response
         tokens,err := utils.GenerateJWT(token_user)
 	   if err != nil{
 		http.Error(w, "Failed to generate tokens", http.StatusInternalServerError)
-		return err
+		return 
 	   }
 	   _ , err = db.Collection_users.UpdateOne(context.TODO(),bson.M{"_id": user.ID}, bson.M{ "$set": bson.M{"refreshToken": tokens.RefreshToken}} )
         
        if err != nil{
 		http.Error(w, "Failed to Update token", http.StatusInternalServerError)
-		return err
+		return 
 	   }
 
 	//    data, err := json.Marshal(tokens)
@@ -227,7 +230,7 @@ func LoginPasswordCheck(login_user User_Login, user models.User, w http.Response
 	err = gob.NewEncoder(&buf).Encode(&tokens)
 	if err != nil {
 		http.Error(w, "Failed to encode cookie data", http.StatusInternalServerError)
-		return err
+		return 
 	}
 	encoded := base64.StdEncoding.EncodeToString(buf.Bytes())
 
@@ -253,24 +256,27 @@ func LoginPasswordCheck(login_user User_Login, user models.User, w http.Response
 		
 	} else{
 		http.Error(w, "Wrong Password", http.StatusUnauthorized)
-		return errors.New("wrong password")
+		return 
  }
-	return nil
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	userData := r.Context().Value("user")
+	userData := r.Context().Value(middlewares.ContextKey{})
 
 	if userData == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return 
 	}
-	
-	userID := userData.(jwt.MapClaims)["_id"].(string)
-	 _, err := db.Collection_users.UpdateOne(context.TODO(),bson.M{
-		"_id": userID,
+	userObjID, err := primitive.ObjectIDFromHex(userData.(string))
+	fmt.Printf("%T", userObjID)
+	if err!= nil{
+        log.Fatal("error while coverting ID string to primitive object ID")
+	}
+
+	 _, err = db.Collection_users.UpdateOne(context.TODO(),bson.M{
+		"_id": userObjID,
 	 }, bson.M{
-		"$set": bson.M{"refreshToken": ""}, // Remove the refresh token field
+		"$unset": bson.M{"refreshToken": ""}, // Remove the refresh token field
 	 })
 
 	 if err != nil {

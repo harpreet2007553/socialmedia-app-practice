@@ -1,7 +1,8 @@
 package middlewares
 
 import (
-	"backend-in-go/controllers"
+	// "backend-in-go/controllers"
+	// "backend-in-go/CylcicPackagesImport"
 	"backend-in-go/db"
 	"backend-in-go/utils"
 	"bytes"
@@ -14,7 +15,7 @@ import (
 	"net/http"
 	"os"
 	"time"
-
+    "backend-in-go/Imports"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,6 +27,10 @@ type JWTokens struct{
 	RefreshToken string
 }
 
+type ContextKey struct{}
+
+// const UserContextKey contextKey = "user"
+
 func VerifyJWT(originalHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)  {
 	err := godotenv.Load()
@@ -33,9 +38,6 @@ func VerifyJWT(originalHandler http.Handler) http.Handler {
 		log.Fatal("error loading env variables", err)
 	}
 
-	type contextKey string
-
-    const userContextKey contextKey = "user"
 
 	ACCESS_TOKEN_SECRET := os.Getenv("ACCESS_TOKEN_SECRET")
     
@@ -43,7 +45,9 @@ func VerifyJWT(originalHandler http.Handler) http.Handler {
 
 	if err != nil {
 		http.Error(w , "No JWT cookie found", http.StatusUnauthorized)
+		return
 	}
+	fmt.Println("cookie value", cookie.Value)
     var jwt_tokens JWTokens
 
 	data, err := base64.StdEncoding.DecodeString(cookie.Value)
@@ -63,6 +67,8 @@ func VerifyJWT(originalHandler http.Handler) http.Handler {
 	result , err := jwt.Parse(jwt_tokens.AccessToken, func(token *jwt.Token) (interface{}, error) {
 		return []byte(ACCESS_TOKEN_SECRET), nil
 	})
+    fmt.Println(err)
+	// fmt.Println("token parsing ")
 
 	if err != nil {
 		switch {
@@ -73,7 +79,7 @@ func VerifyJWT(originalHandler http.Handler) http.Handler {
 				log.Fatal("error while generating new tokens", err)
 			}
 			
-	 		ctx := context.WithValue(r.Context(), userContextKey, new_tokens)
+	 		ctx := context.WithValue(r.Context(), ContextKey{}, new_tokens)
 
 			originalHandler.ServeHTTP(w, r.WithContext(ctx))
 			return
@@ -102,11 +108,15 @@ func VerifyJWT(originalHandler http.Handler) http.Handler {
 	if !ok {
 		log.Fatal("error while parsing jwt claims")
 	}
-	// userId, ok := jwt_map["_id"].(string)
+	fmt.Printf("%T", jwt_map["_id"])
+	userId, ok := jwt_map["_id"].(string)
 
-	
+	if !ok {
+		log.Fatal("error while getting user id from jwt claims")
+	}
      
-	ctx := context.WithValue(r.Context(), userContextKey, jwt_map)
+	ctx := context.WithValue(r.Context(), ContextKey{}, userId)
+	fmt.Println(userId)
 
 	originalHandler.ServeHTTP(w, r.WithContext(ctx))
     
@@ -166,7 +176,7 @@ func NewTokens(w http.ResponseWriter,refreshTokenString string) (utils.GenerateJ
 		return utils.GenerateJWTResponse{}, err
 	}
 
-	var cookie_data = controllers.Register_User_Cookie{
+	var cookie_data = Imports.Register_user_cookie{
 		RefreshToken:     NewTokens.RefreshToken,
 		AccessToken:     NewTokens.AccessToken,
 	}
