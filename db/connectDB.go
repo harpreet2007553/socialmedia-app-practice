@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 var Collection_users *mongo.Collection
+var Collection_posts *mongo.Collection
 
 func ConnectDB(){
 	err := godotenv.Load()
@@ -31,5 +32,8 @@ func ConnectDB(){
 	}
 
 	Collection_users = client.Database("SocialAppDB").Collection("users")
+	Collection_posts = client.Database("SocialAppDB").Collection("posts")
+
+	
 	fmt.Println("Successfully Connected To MONGODB!!")
 }

@@ -33,6 +33,9 @@ func main() {
 
   http.HandleFunc("/register", controllers.RegisterUser)
   http.HandleFunc("/login", controllers.LoginUser)
+  // http.HandleFunc("/filetest", cloudinary.FileDataTest)
+
+  http.Handle("/posts", middlewares.VerifyJWT(http.HandlerFunc(controllers.Posts)))
 
   logoutHandler := http.HandlerFunc(controllers.Logout)
   http.Handle("/logout", middlewares.VerifyJWT(logoutHandler))
