@@ -6,9 +6,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func Comment(w http.ResponseWriter, r *http.Request){
@@ -65,11 +69,68 @@ func Comment(w http.ResponseWriter, r *http.Request){
    w.Write(jsonComment)
 }
 
-func GetComments(w http.ResponseWriter, r *http.Request){
+func GetUserComments(w http.ResponseWriter, r *http.Request){
    // take post id from params
    // get all comments for that post
    // return all comments as response
+   userId := r.URL.Query().Get("userId")
+	if userId == ""{
+		http.Error(w, "Post ID is required", http.StatusBadRequest)
+		return
+	}
+	// fmt.Println(postId)
+	userObjID, err := primitive.ObjectIDFromHex(userId)
+	if err != nil{
+		http.Error(w, "Error converting postId string type to primitive.ObjectId type", http.StatusBadRequest)
+        return
+	}
+	pipeline :=  mongo.Pipeline{
+		bson.D{{Key: "$match", Value: bson.D{{ Key: "_id",Value : userObjID}}}},
+		 bson.D{{Key: "$lookup", Value: bson.D{
+			{Key: "from", Value: "comments"},
+			{Key: "localField", Value: "_id"},
+			{Key: "foreignField", Value: "owner"},
+			{Key: "as", Value: "comments"},
+		}}},
+		// bson.D{{Key: "$unwind", Value: bson.D{{Key: "path", Value: "$comments"}, {Key: "preserveNullAndEmptyArrays", Value: true}}}},
+		bson.D{
+			{Key: "$project", Value: bson.D{
+				{Key: "comments._id", Value: 1},
+				{Key: "comments.content", Value: 1},
+				{Key: "comments.owner", Value: 1},
+				{Key: "comments.createdAt", Value: 1},
+				{Key: "comments.updatedAt", Value: 1},
+				{Key: "comments.post_id", Value: 1},
+			}},
+		},
+	}
 
+   cur, err := db.Collection_users.Aggregate(context.TODO(), pipeline)
+    if err != nil {
+        log.Fatal(err)
+    }
+     
+	var comments []bson.M
+	err = cur.All(context.TODO(), &comments)
+	if err != nil{
+		http.Error(w, "Failed to retrieve comments", http.StatusInternalServerError)
+		return
+	}
+	defer cur.Close(context.TODO())
+
+	if len(comments)==0{
+		w.Write([]byte("No posts found or user have no posts uploaded"))
+	}
+
+    jsonCommentData, err := json.Marshal(comments)
+
+	if err != nil {
+		http.Error(w, "Failed to marshal posts", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonCommentData)
    
 }
 

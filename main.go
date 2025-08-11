@@ -37,7 +37,10 @@ func main() {
   // http.HandleFunc("/filetest", cloudinary.FileDataTest)
 
   http.Handle("/posts", middlewares.VerifyJWT(http.HandlerFunc(controllers.Posts)))
-  http.HandleFunc("/comment",controllers.Comment)                                    
+  http.HandleFunc("/comment",controllers.Comment)     
+  http.HandleFunc("/user/comments",controllers.GetUserComments)  
+  http.HandleFunc("/user/posts",controllers.GetUserPosts)                               
+                             
 
   logoutHandler := http.HandlerFunc(controllers.Logout)
   http.Handle("/logout", middlewares.VerifyJWT(logoutHandler))

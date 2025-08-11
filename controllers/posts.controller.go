@@ -130,7 +130,7 @@ func GetUserPosts(w http.ResponseWriter, r *http.Request) {
         	{Key: "posts._id", Value: 1},
         	{Key: "posts.title", Value: 1},
         	{Key: "posts.content", Value: 1},
-        	{Key: "posts.attachment", Value: 1},
+			{Key: "posts.attachment", Value: 1},
     	}},
 	},
 
