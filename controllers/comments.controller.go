@@ -65,5 +65,14 @@ func Comment(w http.ResponseWriter, r *http.Request){
    w.Write(jsonComment)
 }
 
+func GetComments(w http.ResponseWriter, r *http.Request){
+   // take post id from params
+   // get all comments for that post
+   // return all comments as response
+
+   
+}
+
+
 
 
