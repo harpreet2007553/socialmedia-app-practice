@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
 
@@ -27,25 +26,21 @@ func main() {
   }
   port = ":" + port
 
-  r := mux.NewRouter()
-
-  api := r.PathPrefix("/api/v1/user").Subrouter()
-
-
-  api.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+  http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello, World!"));
   }) 
   
   // routes.InitUserRoutes();
 
-  api.HandleFunc("/register", controllers.RegisterUser).Methods("POST")
-  api.HandleFunc("/login", controllers.LoginUser).Methods("POST")
+  http.HandleFunc("/register", controllers.RegisterUser)
+  http.HandleFunc("/login", controllers.LoginUser)
   // http.HandleFunc("/filetest", cloudinary.FileDataTest)
 
-  api.Handle("/posts", middlewares.VerifyJWT(http.HandlerFunc(controllers.Posts))).Methods("POST")
+  http.Handle("/posts", middlewares.VerifyJWT(http.HandlerFunc(controllers.Posts)))
+  http.HandleFunc("/comment",controllers.Comment)                                    
 
   logoutHandler := http.HandlerFunc(controllers.Logout)
-  api.Handle("/logout", middlewares.VerifyJWT(logoutHandler)).Methods("POST")
+  http.Handle("/logout", middlewares.VerifyJWT(logoutHandler))
   fmt.Println("Server starting on port", port)
   http.ListenAndServe(port, nil)
 

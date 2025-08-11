@@ -5,10 +5,9 @@ import (
 	"backend-in-go/models"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -18,10 +17,12 @@ func Comment(w http.ResponseWriter, r *http.Request){
    // save comment to db
    // return the comment details as response
 
-   vars := mux.Vars(r)
+   // vars := mux.Vars(r)
    
-   userId := vars["userId"]
-   postId := vars["postId"]
+   userId := r.URL.Query().Get("userId")
+   postId := r.URL.Query().Get("postId")
+   
+   fmt.Println(userId)
 
    userObjID, err := primitive.ObjectIDFromHex(userId)
    if err != nil {
@@ -63,4 +64,6 @@ func Comment(w http.ResponseWriter, r *http.Request){
    w.Header().Set("Content-Type", "application/json")
    w.Write(jsonComment)
 }
+
+
 

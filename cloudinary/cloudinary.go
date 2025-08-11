@@ -45,7 +45,7 @@ func UploadImage(ImageLocalPath string, PostId primitive.ObjectID, w http.Respon
         UniqueFilename: api.Bool(true),
         Overwrite:      api.Bool(true)})
     if err != nil {
-        fmt.Println("error")
+        fmt.Println(err)
     }
 	
 	imgUrl := resp.SecureURL
