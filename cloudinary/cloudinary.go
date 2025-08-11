@@ -68,7 +68,7 @@ func UploadImage(ImageLocalPath string, PostId primitive.ObjectID, w http.Respon
 	},
     bson.M{
 	"$set": bson.M{
-		"image": imgUrl,
+		"attachment": imgUrl,
 	    },
    })
 

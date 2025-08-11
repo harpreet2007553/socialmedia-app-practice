@@ -6,13 +6,18 @@ import (
 	"backend-in-go/middlewares"
 	"backend-in-go/models"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func Posts(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +48,8 @@ func Posts(w http.ResponseWriter, r *http.Request) {
 		Content:    content,
 		Attachment: "",
 		Owner:      userObjID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	result, err := db.Collection_posts.InsertOne(context.Background(), post)
@@ -95,4 +102,65 @@ func Posts(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("hello world")
 	w.Write([]byte("Post created successfully with ID: " + postID.Hex()))
 
+}
+func GetUserPosts(w http.ResponseWriter, r *http.Request) {
+	vars:= mux.Vars(r)
+	userId := vars["userId"]
+	userIdObj, err := primitive.ObjectIDFromHex(userId)
+    
+	if err != nil {
+		http.Error(w, "Invalid User ID", http.StatusBadRequest)
+		return
+	}
+
+	pipeline := mongo.Pipeline{
+	   bson.D{{Key: "$match", Value: bson.D{{Key: "_id", Value: userIdObj}}}},
+	   bson.D{{Key: "$lookup", Value: bson.D{
+		{Key: "from", Value: "posts"},
+		{Key: "localField", Value: "_id"},
+		{Key: "foreignField", Value: "owner"},
+		{Key: "as", Value: "posts"},
+	   }}},
+	//    bson.D{{Key: "$unwind", Value: bson.D{{Key: "path", Value: "$posts"}, {Key: "preserveNullAndEmptyArrays", Value: true}}}},
+	   bson.D{
+    	{Key: "$project", Value: bson.D{
+        	{Key: "fullName", Value: 1},
+        	{Key: "email", Value: 1},
+        	{Key: "userName", Value: 1},
+        	{Key: "posts._id", Value: 1},
+        	{Key: "posts.title", Value: 1},
+        	{Key: "posts.content", Value: 1},
+        	{Key: "posts.attachment", Value: 1},
+    	}},
+	},
+
+}
+
+	cur, err := db.Collection_users.Aggregate(context.TODO(), pipeline)
+    if err != nil {
+        log.Fatal(err)
+    }
+     
+	var posts []bson.M
+	err = cur.All(context.TODO(), &posts)
+	if err != nil{
+		http.Error(w, "Failed to retrieve posts", http.StatusInternalServerError)
+		return
+	}
+    defer cur.Close(context.TODO())
+
+	if len(posts)==0{
+		w.Write([]byte("No posts found or user have no posts uploaded"))
+	}
+
+    jsonPostData, err := json.Marshal(posts)
+
+	if err != nil {
+		http.Error(w, "Failed to marshal posts", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonPostData)
+    
 }

@@ -11,6 +11,8 @@ import (
 )
 var Collection_users *mongo.Collection
 var Collection_posts *mongo.Collection
+var Collection_comments *mongo.Collection
+
 
 func ConnectDB(){
 	err := godotenv.Load()
@@ -33,6 +35,7 @@ func ConnectDB(){
 
 	Collection_users = client.Database("SocialAppDB").Collection("users")
 	Collection_posts = client.Database("SocialAppDB").Collection("posts")
+	Collection_comments = client.Database("SocialAppDB").Collection("comments")
 
 	
 	fmt.Println("Successfully Connected To MONGODB!!")
