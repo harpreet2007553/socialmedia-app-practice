@@ -12,6 +12,8 @@ import (
 var Collection_users *mongo.Collection
 var Collection_posts *mongo.Collection
 var Collection_comments *mongo.Collection
+var Collection_likes *mongo.Collection
+var Collection_followings *mongo.Collection
 
 
 func ConnectDB(){
@@ -36,7 +38,8 @@ func ConnectDB(){
 	Collection_users = client.Database("SocialAppDB").Collection("users")
 	Collection_posts = client.Database("SocialAppDB").Collection("posts")
 	Collection_comments = client.Database("SocialAppDB").Collection("comments")
-
+	Collection_likes = client.Database("SocialAppDB").Collection("likes")
+	Collection_followings = client.Database("SocialAppDB").Collection("followings")
 	
 	fmt.Println("Successfully Connected To MONGODB!!")
 }

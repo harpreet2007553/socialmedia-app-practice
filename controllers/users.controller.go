@@ -289,5 +289,34 @@ func Logout(w http.ResponseWriter, r *http.Request) {
     w.Write([]byte("Logout Successfully"))
 }
 
+func GetUserDetails(w http.ResponseWriter, r *http.Request ){
+	userId := r.URL.Query().Get("userId")
+    userObjId, err := primitive.ObjectIDFromHex(userId)
+
+	if err != nil {
+		http.Error(w, "Invalid User ID or Error converting it's type", http.StatusUnauthorized)
+		return
+	}
+     
+	var userData map[string]interface{}
+
+	err = db.Collection_users.FindOne(context.TODO(), bson.M{
+		"_id": userObjId,
+	}).Decode(&userData)
+	
+	if err!= nil{
+		http.Error(w, "Error while finding the User", http.StatusUnauthorized)
+		return
+	}
+	
+	userResponse := map[string]interface{}{
+		"_id": userData["_id"].(primitive.ObjectID).Hex(),
+		"fullName": userData["fullName"].(string),
+		"userName": userData["userName"].(string),
+		"email": userData["email"].(string),
+	}
+
+	json.NewEncoder(w).Encode(userResponse)
+}
 
 
