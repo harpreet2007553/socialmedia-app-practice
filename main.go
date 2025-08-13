@@ -12,6 +12,9 @@ import (
 	"github.com/joho/godotenv"
 )
 
+
+
+
 func main() {
 
   gob.Register(&controllers.Register_User_Cookie{})
@@ -39,7 +42,14 @@ func main() {
   http.Handle("/posts", middlewares.VerifyJWT(http.HandlerFunc(controllers.Posts)))
   http.HandleFunc("/comment",controllers.Comment)     
   http.HandleFunc("/user/comments",controllers.GetUserComments)  
-  http.HandleFunc("/user/posts",controllers.GetUserPosts)                               
+  http.HandleFunc("/user/posts",controllers.GetUserPosts)  
+  
+  //websocket 
+  manager := controllers.NewManager()
+
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		controllers.ServeWS(manager, w, r)
+	})
                              
 
   logoutHandler := http.HandlerFunc(controllers.Logout)

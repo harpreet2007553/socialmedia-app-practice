@@ -5,6 +5,7 @@ go 1.24.5
 require (
 	github.com/cloudinary/cloudinary-go/v2 v2.11.1
 	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.17.4
 )

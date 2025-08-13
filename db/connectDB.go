@@ -14,6 +14,7 @@ var Collection_posts *mongo.Collection
 var Collection_comments *mongo.Collection
 var Collection_likes *mongo.Collection
 var Collection_followings *mongo.Collection
+var Collection_messages *mongo.Collection
 
 
 func ConnectDB(){
@@ -40,6 +41,7 @@ func ConnectDB(){
 	Collection_comments = client.Database("SocialAppDB").Collection("comments")
 	Collection_likes = client.Database("SocialAppDB").Collection("likes")
 	Collection_followings = client.Database("SocialAppDB").Collection("followings")
+	Collection_messages = client.Database("SocialAppDB").Collection("messages")
 	
 	fmt.Println("Successfully Connected To MONGODB!!")
 }
