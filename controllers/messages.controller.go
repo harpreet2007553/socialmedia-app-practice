@@ -69,56 +69,9 @@ func ServeWS(m *Manager,w http.ResponseWriter, r *http.Request){
 		log.Println("Failed to upgrade connection", err)
 		return
 	}
-	// _, data, err := conn.ReadMessage()
-	// log.Println(string(data))
-	// if err != nil{
-	// 	log.Fatal("Failed to read message", err)
-	// 	return
-	// } 
+	 
 	// Create a new client
-    
-	var RegisterMsg map[string]string
-	// Unmarshal the JSON data into the RegisterMsg struct
-	err = conn.ReadJSON(&RegisterMsg)
-	if err != nil {
-		log.Fatal("Failed to read message", err)
-		return
-	}
-	fmt.Println(RegisterMsg)
-
-	if RegisterMsg["Type"] != "register" || RegisterMsg["Sender"] == "" {
-		log.Fatal("Failed to register", err)
-		return
-	}
-	senderId, err := primitive.ObjectIDFromHex(RegisterMsg["Sender"])
-    if err != nil {
-        log.Fatal("Failed to convert sender ID to ObjectID", err)
-        return
-    }
-	// recieverId,err := primitive.ObjectIDFromHex(RegisterMsg["Reciever"].(string))
-	// if err != nil {
-    //     log.Fatal("Failed to convert reciever ID to ObjectID", err)
-    //     return
-    // }
-
-	message = models.Message{
-		Type : RegisterMsg["Type"],
-		Sender : senderId,
-		// Reciever: recieverId,
-		Text: RegisterMsg["Text"],
-	}
-	_, err = db.Collection_messages.InsertOne(context.TODO(), message)
-    if err != nil {
-		log.Fatal("Failed to insert message into Database", err)
-	}
-	// Create a new client
-	client := &Client{
-		ID:   RegisterMsg["sender"],
-		Conn: conn,
-		Send: make(chan []byte),
-	}
-
-	m.AddClient(client)
+   var client *Client = registerClient(conn, m)
 
 	go func(c *Client){
 		defer func(){
@@ -200,6 +153,56 @@ func ServeWS(m *Manager,w http.ResponseWriter, r *http.Request){
 
 	// Cleanup handled by writer goroutine defer
 	close(client.Send)
+}
+
+
+
+func registerClient(conn *websocket.Conn,m *Manager) *Client{
+	var RegisterMsg map[string]string
+	// Unmarshal the JSON data into the RegisterMsg struct
+	err := conn.ReadJSON(&RegisterMsg)
+	if err != nil {
+		log.Fatal("Failed to read message", err)
+		return nil
+	}
+	fmt.Println(RegisterMsg)
+
+	if RegisterMsg["Sender"] == "" {
+		log.Fatal("Failed to register, msg do not contain sender id")
+		return nil
+	}
+	senderId, err := primitive.ObjectIDFromHex(RegisterMsg["Sender"])
+    if err != nil {
+        log.Fatal("Failed to convert sender ID to ObjectID", err)
+        return nil
+    }
+	// recieverId,err := primitive.ObjectIDFromHex(RegisterMsg["Reciever"].(string))
+	// if err != nil {
+    //     log.Fatal("Failed to convert reciever ID to ObjectID", err)
+    //     return
+    // }
+
+	message = models.Message{
+		Type : RegisterMsg["Type"],
+		Sender : senderId,
+		// Reciever: recieverId,
+		Text: RegisterMsg["Text"],
+	}
+	_, err = db.Collection_messages.InsertOne(context.TODO(), message)
+    if err != nil {
+		log.Fatal("Failed to insert message into Database", err)
+	}
+	// Create a new client
+	client := &Client{
+		ID:   RegisterMsg["sender"],
+		Conn: conn,
+		Send: make(chan []byte),
+	}
+
+	m.AddClient(client)
+
+	return client
+
 }
 
 

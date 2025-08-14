@@ -40,7 +40,7 @@ func main() {
   // http.HandleFunc("/filetest", cloudinary.FileDataTest)
 
   http.Handle("/posts", middlewares.VerifyJWT(http.HandlerFunc(controllers.Posts)))
-  http.HandleFunc("/comment",controllers.Comment)     
+  http.HandleFunc("/user/post/comment",controllers.Comment)     
   http.HandleFunc("/user/comments",controllers.GetUserComments)  
   http.HandleFunc("/user/posts",controllers.GetUserPosts)  
   
@@ -53,7 +53,7 @@ func main() {
                              
 
   logoutHandler := http.HandlerFunc(controllers.Logout)
-  http.Handle("/logout", middlewares.VerifyJWT(logoutHandler))
+  http.Handle("/user/logout", middlewares.VerifyJWT(logoutHandler))
   fmt.Println("Server starting on port", port)
   http.ListenAndServe(port, nil)
 
